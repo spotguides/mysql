@@ -1,0 +1,41 @@
+{{ if and .Values.phpmyadmin.enabled }}
+{{- if .Values.phpmyadmin.ingress.enabled -}}
+{{- $serviceName := include "mysql-single.fullname" . -}}
+{{- $servicePort := .Values.phpmyadmin.service.port -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ template "mysql-single.fullname" . }}-phpmyadmin
+  labels:
+    app.kubernetes.io/name: {{ include "mysql-single.name" . }}
+    helm.sh/chart: {{ include "mysql-single.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- with .Values.phpmyadmin.ingress.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+{{- if .Values.phpmyadmin.ingress.tls }}
+  tls:
+  {{- range .Values.phpmyadmin.ingress.tls }}
+    - hosts:
+      {{- range .hosts }}
+        - {{ . }}
+      {{- end }}
+      secretName: {{ .secretName }}
+  {{- end }}
+{{- end }}
+  rules:
+  {{- range .Values.phpmyadmin.ingress.hosts }}
+  {{- $url := splitList "/" . }}
+    - host: {{ first $url }}
+      http:
+        paths:
+          - path: /{{ rest $url | join "/" }}
+            backend:
+              serviceName: {{ $serviceName }}-phpmyadmin
+              servicePort: http
+  {{- end}}
+{{- end }}
+{{- end }}

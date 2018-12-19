@@ -1,0 +1,89 @@
+pipeline:
+  create_cluster:
+    image: banzaicloud/ci-pipeline-client:latest
+    action: GetCluster
+
+  create_helm_package:
+    image: lachlanevenson/k8s-helm:latest
+    commands:
+    - helm init -c
+    - helm package ./.banzaicloud/charts/mysql-single
+    - helm repo add presslabs https://presslabs.github.io/charts
+
+  install_mysql_root_secret:
+    image: banzaicloud/ci-pipeline-client:latest
+    action: InstallSecret
+    cluster_secret:
+      name: '{{ .DRONE_REPO_NAME }}-mysql'
+      namespace: default
+      spec:
+      - name: mysql-root-password
+        source: password
+    groups:
+      [secret]
+
+  install_mysql_user_secret:
+    image: banzaicloud/ci-pipeline-client:latest
+    action: InstallSecret
+    cluster_secret:
+      name: '{{ .DRONE_REPO_NAME }}-mysql'
+      namespace: default
+      merge: true
+      spec:
+      - name: mysql-username
+        source: username
+      - name: mysql-password
+        source: password
+
+  deploy_mysql_operator:
+    when:
+      branch:
+        include: [master]
+    image: banzaicloud/ci-pipeline-client:latest
+    action: EnsureDeployment
+    deployment:
+      name: 'presslabs/mysql-operator'
+      releaseName: 'mysql-operator'
+      version: 0.1.14
+      reuseValues: true
+      namespace: 'pipeline-system'
+
+  deploy_mysql_cluster:
+    image: banzaicloud/ci-pipeline-client:latest
+    action: EnsureDeployment
+    deployment:
+      name: './mysql-single-0.0.2.tgz'
+      reuseValues: true
+      releaseName: '{{ .DRONE_REPO_NAME }}'
+      values:
+        mysql:
+          secretName: '{{ .DRONE_REPO_NAME }}-root'
+
+#  install_phpmyadmin_control_secret:
+#    when:
+#      branch:
+#        include: [master]
+#    image: banzaicloud/ci-pipeline-client:latest
+#    action: InstallSecret
+#    cluster_secret:
+#      name: '{{ .DRONE_REPO_NAME }}-mysql'
+#      namespace: default
+#      merge: true
+#      spec:
+#      - name: mysql-username
+#        source: username
+#      - name: mysql-password
+#        source: password
+#
+#  - type: pipeline
+#    dataType: enum
+#    label: 'Provider'
+#    description: ''
+#    default: 'Amazon S3'
+#    required: true
+#    group: Backup
+#    options:
+#    - 'Amazon S3'
+#    - 'Google GCS'
+#    - 'Azure  Blobs'
+

@@ -1,0 +1,241 @@
+apiVersion: v1
+name: 'Mysql Server + phpMyAdmin'
+description: 'Make single or ha mysql with phpMyAdmin and Backup'
+tags: ['MySQL', 'phpMyAdmin', 'database', 'ha' ]
+resources:
+  sumCpu: 3
+  sumMem: 6
+  filters: []
+  sameSize: true
+  onDemandPct: 100
+  minNodes: 1
+  maxNodes: 3
+questions:
+
+- type: pipeline
+  dataType: enum
+  label: 'Version'
+  default: '5.7'
+  required: true
+  group: Mysql Server
+  options:
+  - '5.7'
+  - '8.0'
+  targets:
+  - deploy_mysql_cluster.deployment.values.mysql.version
+  order: 1
+
+- type: secret
+  dataType: password
+  name: mysql-root-password
+  group: Mysql Server
+  label: 'Root password'
+  placeholder:
+    password: 'Please enter root password'
+  disabled:
+    username: true
+  default:
+    username: root
+  tags:
+  - app:mysql
+  targets:
+  - name: install_mysql_root_secret.cluster_secret.sourceSecretName
+  - password: deploy_mysql_cluster.deployment.values.mysql.root_password
+  order: 2
+
+- type: pipeline
+  key: database_name
+  dataType: string
+  group: Mysql Server
+  label: Database name
+  placeholder: 'Please enter database name'
+  targets:
+    - deploy_mysql_cluster.deployment.values.mysql.database
+  order: 3
+
+- type: secret
+  dataType: password
+  name: mysql-database-secret
+  group: Mysql Server
+  label: 'Database password'
+  default:
+    username: ''
+    password: ''
+  placeholder:
+    username: 'Please enter database username'
+    password: 'Please enter database password'
+  required: true
+  tags:
+  - app:mysql
+  targets:
+  - name: install_mysql_user_secret.cluster_secret.sourceSecretName
+  - username: deploy_mysql_cluster.deployment.values.mysql.user
+  showIf:
+    properties:
+      database_name:
+        type: string
+        minLength: 1
+  order: 4
+
+- type: pipeline
+  dataType: number
+  label: 'Replica(s)'
+  default: 3
+  required: false
+  group: Mysql Server
+  min: 1
+  max: 5
+  targets:
+  - deploy_mysql_cluster.deployment.values.mysql.replicas
+  order: 5
+
+- type: pipeline
+  key: mysql_configuration
+  group: Mysql Server
+  dataType: boolean
+  label: Customize configuration
+  default: false
+  order: 6
+
+- type: pipeline
+  dataType: string
+  controlType: code
+  label: Config options
+  group: Mysql Server
+  default: |
+    #option1: a
+    #option2: b
+  required: true
+  order: 7
+  targets:
+  - deploy_mysql_cluster.deployment.values.mysql.conf
+  # Using https://codemirror.net/doc/manual.html#config
+  config:
+    mode: yaml
+    indentWithTabs: false
+    indentUnit: 2
+    lineNumbers: false
+  showIf:
+    properties:
+      mysql_configuration:
+        const: true
+
+- type: pipeline
+  key: mysql_resources
+  group: Mysql Server
+  dataType: boolean
+  label: Customize resources
+  default: false
+  order: 8
+
+- type: pipeline
+  dataType: string
+  label: Memory request
+  default: 128Mi
+  group: Mysql Server
+  pattern: ^\d+(E|P|T|G|M|K|Ei|Pi|Ti|Gi|Mi|Ki)?$
+  description: Minimum amount of memory the MysqlServer container needs
+  required: true
+  targets:
+  - deploy_mysql_cluster.deployment.values.mysql.resources.requests.memory
+  showIf:
+    properties:
+      mysql_resources:
+        const: true
+  order: 9
+
+- type: pipeline
+  dataType: string
+  label: Memory limit
+  default: 512Mi
+  group: Mysql Server
+  pattern: ^\d+(E|P|T|G|M|K|Ei|Pi|Ti|Gi|Mi|Ki)?$
+  description: Maximum amount of memory the MysqlServer container can use
+  required: true
+  order: 10
+  targets:
+  - deploy_mysql_cluster.deployment.values.mysql.resources.limits.memory
+  showIf:
+    properties:
+      mysql_resources:
+        const: true
+
+- type: pipeline
+  dataType: string
+  label: CPU request
+  default: 250m
+  group: Mysql Server
+  pattern: ^\d+(\.?\d+|m)?$
+  description: Minimum amount of CPU the MysqlServer container needs
+  required: true
+  order: 11
+  targets:
+  - deploy_mysql_cluster.deployment.values.mysql.resources.requests.cpu
+  showIf:
+    properties:
+      mysql_resources:
+        const: true
+
+- type: pipeline
+  dataType: string
+  label: CPU limit
+  default: 2000m
+  group: Mysql Server
+  pattern: ^\d+m$
+  description: Maximum amount of CPU the MysqlServer container can use
+  required: true
+  order: 12
+  targets:
+  - deploy_mysql_cluster.deployment.values.mysql.resources.limits.cpu
+  showIf:
+    properties:
+      mysql_resources:
+        const: true
+
+- type: pipeline
+  key: set_phpmyadmin_enable
+  dataType: boolean
+  label: 'Install phpMyAdmin'
+  default: true
+  group: phpMyAdmin
+  targets:
+    - deploy_mysql_cluster.deployment.values.phpmyadmin.enabled
+  order: 7
+
+- type: pipeline
+  dataType: enum
+  label: 'Version'
+  description: ''
+  default: '4.7'
+  required: true
+  group: phpMyAdmin
+  options:
+  - '4.7'
+  - '4.8'
+  showIf:
+    properties:
+      set_phpmyadmin_enable:
+        const: true
+  targets:
+    - deploy_mysql_cluster.deployment.values.phpmyadmin.image.tag
+  order: 8
+
+- type: secret
+  dataType: password
+  name: phpmyadmin-control-secret
+  group: phpMyAdmin
+  default:
+    username: control-user
+  label:
+    username: 'Control username'
+    password: 'Control password'
+  tags:
+  - app:phpMyAdmin
+  targets:
+  - name: install_phpmyadmin_control_secret.cluster_secret.sourceSecretName
+  - username: deploy_application.deployment.values.mysql.mysqlUser
+  showIf:
+    properties:
+      set_phpmyadmin_enable:
+        const: true
+  order: 9

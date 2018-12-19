@@ -1,0 +1,22 @@
+{{ if and .Values.phpmyadmin.enabled }}
+  apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "mysql-single.fullname" . }}-phpmyadmin
+  labels:
+    app.kubernetes.io/name: {{ include "mysql-single.name" . }}
+    helm.sh/chart: {{ include "mysql-single.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  type: {{ .Values.phpmyadmin.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.phpmyadmin.service.port }}
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: {{ include "mysql-single.name" . }}
+    helm.sh/chart: {{ include "mysql-single.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{ end }}

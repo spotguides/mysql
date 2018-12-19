@@ -1,0 +1,21 @@
+{{- if .Values.mysql.allowExternal -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "mysql-single.fullname" . }}-mysql-master-external
+  labels:
+    app.kubernetes.io/name: {{ include "mysql-single.name" . }}
+    helm.sh/chart: {{ include "mysql-single.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  type: LoadBalancer
+  ports:
+  - name: mysql
+    port: 3306
+    protocol: TCP
+    targetPort: 3306
+  selector:
+    app: mysql-operator
+    mysql_cluster: {{ include "mysql-single.fullname" . }}
+{{ end }}
