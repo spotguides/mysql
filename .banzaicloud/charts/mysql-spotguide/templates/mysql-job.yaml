@@ -1,0 +1,97 @@
+{{- if .Values.mysql.database }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "mysql-spotguide.fullname" . }}-mysql-create-database
+  labels:
+    app.kubernetes.io/name: {{ include "mysql-spotguide.name" . }}
+    helm.sh/chart: {{ include "mysql-spotguide.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
+spec:
+  backoffLimit: 10
+  template:
+    metadata:
+      name: {{ template "mysql-spotguide.fullname" . }}-mysql-create-user
+      labels:
+        app.kubernetes.io/name: {{ include "mysql-spotguide.name" . }}
+        helm.sh/chart: {{ include "mysql-spotguide.chart" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+    spec:
+      restartPolicy: "OnFailure"
+      containers:
+      - name: mysql-client
+        image: "banzaicloud/mysql-client:0.0.3"
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: VERBOSE
+          value: "true"
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ default (printf "%s-cluster" (include "mysql-spotguide.fullname" .)) .Values.mysql.existingSecret }}
+              key: ROOT_PASSWORD
+        - name: MYSQL_HOST
+          value: {{ printf "%s-mysql-master" (include "mysql-spotguide.clustername" . ) }}
+        - name: CUSTOM_DATABASE
+          value: {{ .Values.mysql.database }}
+        args:
+        - CREATE DATABASE IF NOT EXISTS {{ `{{ .CUSTOM_DATABASE }}` }};
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "mysql-spotguide.fullname" . }}-mysql-create-user
+  labels:
+    app.kubernetes.io/name: {{ include "mysql-spotguide.name" . }}
+    helm.sh/chart: {{ include "mysql-spotguide.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "10"
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
+spec:
+  backoffLimit: 10
+  template:
+    metadata:
+      name: {{ template "mysql-spotguide.fullname" . }}-mysql-create-user
+      labels:
+        app.kubernetes.io/name: {{ include "mysql-spotguide.name" . }}
+        helm.sh/chart: {{ include "mysql-spotguide.chart" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+    spec:
+      restartPolicy: "OnFailure"
+      containers:
+      - name: mysql-client
+        image: "banzaicloud/mysql-client:0.0.3"
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: VERBOSE
+          value: "true"
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ default (printf "%s-cluster" (include "mysql-spotguide.fullname" .)) .Values.mysql.existingSecret }}
+              key: ROOT_PASSWORD
+        - name: MYSQL_HOST
+          value: {{ printf "%s-mysql-master" (include "mysql-spotguide.clustername" . ) }}
+        - name: CUSTOM_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ default (printf "%s-cluster" (include "mysql-spotguide.fullname" .)) .Values.mysql.existingSecret }}
+              key: USER
+        - name: CUSTOM_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ default (printf "%s-cluster" (include "mysql-spotguide.fullname" .)) .Values.mysql.existingSecret }}
+              key: PASSWORD
+        args:
+        - CREATE USER IF NOT EXISTS '{{ `{{ .CUSTOM_USERNAME }}` }}'@'%' IDENTIFIED BY '{{ `{{ .CUSTOM_PASSWORD | replace "'" "\\'" }}` }}';
+{{- end }}

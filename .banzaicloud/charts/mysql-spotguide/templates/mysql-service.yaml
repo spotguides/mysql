@@ -1,0 +1,22 @@
+{{- if .Values.mysql.allowExternal }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "mysql-spotguide.clustername" . }}-mysql-master-external
+  labels:
+    app.kubernetes.io/name: {{ include "mysql-spotguide.name" . }}
+    helm.sh/chart: {{ include "mysql-spotguide.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  type: LoadBalancer
+  ports:
+  - name: mysql
+    port: 3306
+    protocol: TCP
+    targetPort: mysql
+  selector:
+    app: mysql-operator
+    role: master
+    mysql_cluster: {{ include "mysql-spotguide.fullname" . }}
+{{- end }}

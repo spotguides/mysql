@@ -2,25 +2,25 @@
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
-  name: {{ include "mysql-single.fullname" . }}-phpmyadmin
+  name: {{ include "mysql-spotguide.fullname" . }}-phpmyadmin
   labels:
-    app.kubernetes.io/name: {{ include "mysql-single.name" . }}
-    helm.sh/chart: {{ include "mysql-single.chart" . }}
+    app.kubernetes.io/name: {{ include "mysql-spotguide.name" . }}
+    helm.sh/chart: {{ include "mysql-spotguide.chart" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "mysql-single.name" . }}
-      helm.sh/chart: {{ include "mysql-single.chart" . }}
+      app.kubernetes.io/name: {{ include "mysql-spotguide.name" . }}
+      helm.sh/chart: {{ include "mysql-spotguide.chart" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
       app.kubernetes.io/managed-by: {{ .Release.Service }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ include "mysql-single.name" . }}
-        helm.sh/chart: {{ include "mysql-single.chart" . }}
+        app.kubernetes.io/name: {{ include "mysql-spotguide.name" . }}
+        helm.sh/chart: {{ include "mysql-spotguide.chart" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/managed-by: {{ .Release.Service }}
     spec:
@@ -32,19 +32,19 @@ spec:
             - name: PMA_CONTROLUSER
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "mysql-single.fullname" . }}-phpmyadmin
+                  name: {{ default (printf "%s-phpmyadmin" (include "mysql-spotguide.fullname" .)) .Values.phpmyadmin.existingSecret }}
                   key: username
             - name: PMA_CONTROLPASS
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "mysql-single.fullname" . }}-phpmyadmin
+                  name: {{ default (printf "%s-phpmyadmin" (include "mysql-spotguide.fullname" .)) .Values.phpmyadmin.existingSecret }}
                   key: password
             - name: PMA_CONTROLHOST
-              value: {{ printf "%s-mysql-master.%s.%s" (include "mysql-single.fullname" . ) .Release.Namespace "svc.cluster.local" }}
+              value: {{ printf "%s-mysql-master" (include "mysql-spotguide.clustername" . ) }}
             - name: PMA_PMADB
               value: "pma"
             - name: PMA_HOST
-              value: {{ printf "%s-mysql-master.%s.%s" (include "mysql-single.fullname" . ) .Release.Namespace "svc.cluster.local" }}
+              value: {{ printf "%s-mysql-master" (include "mysql-spotguide.clustername" . ) }}
           ports:
             - name: http
               containerPort: 80

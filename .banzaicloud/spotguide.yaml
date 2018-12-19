@@ -1,26 +1,26 @@
 apiVersion: v1
-name: 'Mysql Server + phpMyAdmin'
-description: 'Make single or ha mysql with phpMyAdmin and Backup'
-tags: ['MySQL', 'phpMyAdmin', 'database', 'ha' ]
+name: 'MySQL Server & phpMyAdmin'
+description: 'Make single or HA MySQL with phpMyAdmin and scheduled backups'
+tags: ['MySQL', 'phpMyAdmin', 'database']
 resources:
-  sumCpu: 3
+  sumCpu: 4
   sumMem: 6
   filters: []
   sameSize: true
   onDemandPct: 100
   minNodes: 1
-  maxNodes: 3
+  maxNodes: 2
 questions:
 
 - type: pipeline
   dataType: enum
   label: 'Version'
-  default: '5.7'
+  default: '5.7-stretch'
   required: true
   group: Mysql Server
   options:
-  - '5.7'
-  - '8.0'
+  - value: '5.7-stretch'
+    label: '5.7'
   targets:
   - deploy_mysql_cluster.deployment.values.mysql.version
   order: 1
@@ -39,8 +39,7 @@ questions:
   tags:
   - app:mysql
   targets:
-  - name: install_mysql_root_secret.cluster_secret.sourceSecretName
-  - password: deploy_mysql_cluster.deployment.values.mysql.root_password
+  - install_mysql_root_secret.clusterSecret.sourceSecretName
   order: 2
 
 - type: pipeline
@@ -48,7 +47,7 @@ questions:
   dataType: string
   group: Mysql Server
   label: Database name
-  placeholder: 'Please enter database name'
+  placeholder: 'Database to be created'
   targets:
     - deploy_mysql_cluster.deployment.values.mysql.database
   order: 3
@@ -59,22 +58,21 @@ questions:
   group: Mysql Server
   label: 'Database password'
   default:
-    username: ''
-    password: ''
+    username: 'user'
   placeholder:
     username: 'Please enter database username'
     password: 'Please enter database password'
-  required: true
   tags:
   - app:mysql
   targets:
-  - name: install_mysql_user_secret.cluster_secret.sourceSecretName
-  - username: deploy_mysql_cluster.deployment.values.mysql.user
+  - install_mysql_user_secret.clusterSecret.sourceSecretName
   showIf:
     properties:
       database_name:
         type: string
         minLength: 1
+    required:
+    - database_name
   order: 4
 
 - type: pipeline
@@ -83,11 +81,20 @@ questions:
   default: 3
   required: false
   group: Mysql Server
-  min: 1
+  min: 3
   max: 5
   targets:
   - deploy_mysql_cluster.deployment.values.mysql.replicas
   order: 5
+
+- type: pipeline
+  dataType: boolean
+  label: TLS (coming soon...)
+  key: tls_endpoint
+  group: Mysql Server
+  disabled: true
+  default: false
+  order: 6
 
 - type: pipeline
   key: mysql_configuration
@@ -95,7 +102,7 @@ questions:
   dataType: boolean
   label: Customize configuration
   default: false
-  order: 6
+  order: 7
 
 - type: pipeline
   dataType: string
@@ -103,10 +110,9 @@ questions:
   label: Config options
   group: Mysql Server
   default: |
-    #option1: a
-    #option2: b
+    # innodb_buffer_pool_size: 128M
   required: true
-  order: 7
+  order: 8
   targets:
   - deploy_mysql_cluster.deployment.values.mysql.conf
   # Using https://codemirror.net/doc/manual.html#config
@@ -126,7 +132,7 @@ questions:
   dataType: boolean
   label: Customize resources
   default: false
-  order: 8
+  order: 9
 
 - type: pipeline
   dataType: string
@@ -142,7 +148,7 @@ questions:
     properties:
       mysql_resources:
         const: true
-  order: 9
+  order: 10
 
 - type: pipeline
   dataType: string
@@ -152,7 +158,7 @@ questions:
   pattern: ^\d+(E|P|T|G|M|K|Ei|Pi|Ti|Gi|Mi|Ki)?$
   description: Maximum amount of memory the MysqlServer container can use
   required: true
-  order: 10
+  order: 11
   targets:
   - deploy_mysql_cluster.deployment.values.mysql.resources.limits.memory
   showIf:
@@ -168,7 +174,7 @@ questions:
   pattern: ^\d+(\.?\d+|m)?$
   description: Minimum amount of CPU the MysqlServer container needs
   required: true
-  order: 11
+  order: 12
   targets:
   - deploy_mysql_cluster.deployment.values.mysql.resources.requests.cpu
   showIf:
@@ -181,15 +187,61 @@ questions:
   label: CPU limit
   default: 2000m
   group: Mysql Server
-  pattern: ^\d+m$
+  pattern: ^\d+(\.?\d+|m)?$
   description: Maximum amount of CPU the MysqlServer container can use
   required: true
-  order: 12
+  order: 13
   targets:
   - deploy_mysql_cluster.deployment.values.mysql.resources.limits.cpu
   showIf:
     properties:
       mysql_resources:
+        const: true
+
+- type: pipeline
+  dataType: boolean
+  label: Enable (coming soon...)
+  key: enable_backups
+  group: Mysql Server Backups
+  disabled: true
+  default: false
+  order: 14
+  targets:
+    - deploy_mysql_cluster.deployment.values.mysql.backup.enabled
+
+- type: bucket
+  group: Mysql Server Backups
+  hidden: true
+  filter:
+    cloud:
+      - amazon
+  description: In this version, only AWS S3 buckets are supported
+  order: 15
+  showIf:
+    properties:
+      enable_backups:
+        const: true
+  targets:
+    - name: deploy_mysql_cluster.deployment.values.mysql.backup.bucket
+    - cloud: deploy_mysql_cluster.deployment.values.mysql.backup.cloud
+    - location: install_backup_secret.clusterSecret.spec[2].value
+    - location: deploy_mysql_cluster.deployment.values.mysql.backup.location
+    - secret.name: install_backup_secret.clusterSecret.sourceSecretName
+
+- type: pipeline
+  dataType: string
+  group: Mysql Server Backups
+  hidden: true
+  default: 0 * * * * *
+  label: schedule
+  placeholder: CRON expression
+  pattern: ^(((([\*]{1}){1})|((\*\/){0,1}(([0-9]{1}){1}|(([1-5]{1}){1}([0-9]{1}){1}){1}))) ((([\*]{1}){1})|((\*\/){0,1}(([0-9]{1}){1}|(([1-5]{1}){1}([0-9]{1}){1}){1}))) ((([\*]{1}){1})|((\*\/){0,1}(([0-9]{1}){1}|(([1]{1}){1}([0-9]{1}){1}){1}|([2]{1}){1}([0-3]{1}){1}))) ((([\*]{1}){1})|((\*\/){0,1}(([1-9]{1}){1}|(([1-2]{1}){1}([0-9]{1}){1}){1}|([3]{1}){1}([0-1]{1}){1}))) ((([\*]{1}){1})|((\*\/){0,1}(([1-9]{1}){1}|(([1-2]{1}){1}([0-9]{1}){1}){1}|([3]{1}){1}([0-1]{1}){1}))|(jan|feb|mar|apr|may|jun|jul|aug|sep|okt|nov|dec)) ((([\*]{1}){1})|((\*\/){0,1}(([0-7]{1}){1}))|(sun|mon|tue|wed|thu|fri|sat)))$
+  order: 16
+  targets:
+    - deploy_mysql_cluster.deployment.values.mysql.backup.schedule
+  showIf:
+    properties:
+      enable_backups:
         const: true
 
 - type: pipeline
@@ -200,7 +252,7 @@ questions:
   group: phpMyAdmin
   targets:
     - deploy_mysql_cluster.deployment.values.phpmyadmin.enabled
-  order: 7
+  order: 18
 
 - type: pipeline
   dataType: enum
@@ -218,7 +270,7 @@ questions:
         const: true
   targets:
     - deploy_mysql_cluster.deployment.values.phpmyadmin.image.tag
-  order: 8
+  order: 19
 
 - type: secret
   dataType: password
@@ -232,10 +284,9 @@ questions:
   tags:
   - app:phpMyAdmin
   targets:
-  - name: install_phpmyadmin_control_secret.cluster_secret.sourceSecretName
-  - username: deploy_application.deployment.values.mysql.mysqlUser
+  - install_phpmyadmin_control_secret.clusterSecret.sourceSecretName
   showIf:
     properties:
       set_phpmyadmin_enable:
         const: true
-  order: 9
+  order: 20

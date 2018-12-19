@@ -1,0 +1,127 @@
+# MySQL
+
+Congratulations, your MySQL cluster has been deployed to Kubernetes!
+
+## Access
+
+MySQL can be accessed via port `3306` on the following DNS name from within your cluster:
+`{{ template "mysql-spotguide.clustername" . }}-mysql-master.{{ .Release.Namespace }}.svc.cluster.local`
+
+To get your root password run:
+
+{{- if .Values.mysql.existingSecret }}
+
+```bash
+MYSQL_ROOT_PASSWORD=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ .Values.mysql.existingSecret }} -o jsonpath="{.data.ROOT_PASSWORD}" | base64 --decode; echo)
+```
+
+{{- else }}
+
+```bash
+MYSQL_ROOT_PASSWORD=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "mysql-spotguide.fullname" . }}-cluster -o jsonpath="{.data.ROOT_PASSWORD}" | base64 --decode; echo)
+```
+
+{{- end }}
+
+### Connect from inside the Kubernetes cluster
+
+1. Run an Ubuntu pod that you can use as a client:
+
+    {{- if .Values.banzaicloud.cluster.id }}
+
+    Download the `kubeconfig` file: [Cluster details]({{ .Values.banzaicloud.organization.name }}/cluster/{{ .Values.banzaicloud.cluster.id }}/details):
+
+    ```bash
+    export KUBEFONFIG=<kubeconfig>
+    ```
+    {{- end }}
+
+    ```bash
+    kubectl run --namespace {{ .Release.Namespace }} -i --tty ubuntu --image=ubuntu:16.04 --restart=Never -- bash -il
+    ```
+
+2. Install the mysql client:
+
+    ```bash
+    apt-get update && apt-get install mysql-client -y
+    ```
+
+3. Connect using the mysql cli, then provide your password:
+
+    ```bash
+    mysql -h {{ template "mysql-spotguide.clustername" . }}-mysql-master -p
+    ```
+
+### Connect from outside the Kubernetes cluster
+
+{{- if .Values.mysql.allowExternal }}
+
+*NOTE: It may take a few minutes for the LoadBalancer IP to be available.*
+
+*Watch the status with*:
+
+```bash
+kubectl get svc --namespace {{ .Release.Namespace }} -w {{ template "mysql-spotguide.clustername" . }}-mysql-master-external
+```
+
+Get the IP address:
+
+```bash
+MYSQL_HOST=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "mysql-spotguide.clustername" . }}-mysql-master-external --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+MYSQL_PORT=3306
+```
+
+> TLS support is coming soon
+
+{{- else }}
+
+```bash
+MYSQL_HOST=127.0.0.1
+MYSQL_PORT=3306
+
+# Execute the following command to route the connection:
+kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ template "mysql-spotguide.clustername" . }}-mysql-master 3306:3306
+```
+
+{{- end }}
+
+```bash
+mysql -h ${MYSQL_HOST} -P${MYSQL_PORT} -u root -p${MYSQL_ROOT_PASSWORD}
+```
+
+{{- if .Values.phpmyadmin.enabled }}
+
+## phpMyAdmin
+
+{{ if gt (len .Values.phpmyadmin.ingress.hosts) 0 -}}
+phpMyAdmin can be accessed on the following host(s):
+{{ range .Values.phpmyadmin.ingress.hosts }}
+- [{{ . }}](http://{{ . }})
+{{- end }}
+{{- else }}
+
+phpMyAdmin can be accessed on localhost by using the following command:
+
+```bash
+kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ template "mysql-spotguide.fullname" . }}-phpmyadmin 8080:{{ .Values.phpmyadmin.service.port }}
+
+# open in browser
+open http://localhost:8080
+```
+{{- end }}
+{{- end }}
+
+{{- if .Values.banzaicloud.cluster.id }}
+
+## Details
+
+- [CI/CD]({{ .Values.banzaicloud.organization.name }}/cicd/{{ include "repo-name" . }})
+- [Cluster]({{ .Values.banzaicloud.organization.name }}/cluster/{{ .Values.banzaicloud.cluster.id }}/details)
+- [Secrets]({{ .Values.banzaicloud.organization.name }}/secret?filter={{ include "repo-tag" . }})
+
+Monitor your application with Grafana:
+
+- [Grafana]({{ .Values.banzaicloud.organization.name }}/deployment?cluster={{ .Values.banzaicloud.cluster.name }}&name=monitor)
+- [User secret]({{ .Values.banzaicloud.organization.name }}/secret?name=cluster-{{ .Values.banzaicloud.cluster.id }}-grafana)
+
+{{- end }}

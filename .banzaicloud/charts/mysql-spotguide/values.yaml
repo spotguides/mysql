@@ -1,0 +1,83 @@
+# available when running the deployment in Pipeline CI
+banzaicloud:
+  tags: []
+  organization:
+    name:
+  cluster:
+    id:
+    name:
+    cloud:
+    distribution:
+    location:
+
+monitor:
+  # for local development
+  enabled: false
+
+ingress:
+  # for local development
+  enabled: false
+
+mysql:
+  version: "5.7-stretch"
+  existingSecret:
+  database:
+  user: "user"
+  password:
+  rootPassword:
+  backup:
+    enabled: false
+    schedule: "0 * * * * *" # every hour
+    limit: 8
+    bucket: ""
+    secret: ""
+    cloud: ""
+    location: ""
+  replicas: 2
+  conf: >
+    # innodb_buffer_pool_size: 128M
+
+  allowExternal: true
+  resources:
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #  cpu: 100m
+    #  memory: 128Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+  # Based on PersistentVolumeClaimSpec
+  volumeSpec:
+    accessModes: ["ReadWriteOnce"]
+    resources:
+      requests:
+        storage: 10Gi
+
+phpmyadmin:
+  enabled: true
+  existingSecret:
+  image:
+    registry: docker.io
+    repository: phpmyadmin/phpmyadmin
+    tag: 4.8
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+  ingress:
+    enabled: true
+    annotations: {}
+      # kubernetes.io/ingress.class: traefik
+      # traefik.ingress.kubernetes.io/redirect-regex: ^http://(.*)
+      # traefik.ingress.kubernetes.io/redirect-replacement: https://$1
+      # traefik.ingress.kubernetes.io/redirect-permanent: "true"
+    hosts: []
+    #  - "domain.com/xyz"
+    #  - "domain.com"
+    tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - chart-example.local

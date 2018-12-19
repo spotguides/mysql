@@ -1,0 +1,34 @@
+monitor:
+  enabled: true
+  grafana:
+    grafana.ini:
+      server:
+        root_url: "%(protocol)s://%(domain)s/"
+      auth.anonymous:
+        enabled: true
+        org_name: "Main Org."
+        org_role: "Admin"
+    ingress:
+      annotations:
+        traefik.ingress.kubernetes.io/redirect-permanent: "false"
+        traefik.ingress.kubernetes.io/ssl-redirect: "false"
+        traefik.ingress.kubernetes.io/redirect-regex: ""
+        traefik.ingress.kubernetes.io/redirect-replacement: ""
+      path: /
+      hosts:
+      - grafana.127.0.0.1.xip.io
+ingress:
+  enabled: true
+phpmyadmin:
+  ingress:
+    annotations:
+      kubernetes.io/ingress.class: traefik
+    hosts:
+    - admin.127.0.0.1.xip.io
+mysql:
+  replicas: 1
+  database: "local"
+  user: "user"
+  password: "password"
+  rootPassword: "rootpassword"
+  allowExternal: false

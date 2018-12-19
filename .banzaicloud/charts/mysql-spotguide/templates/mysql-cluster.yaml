@@ -1,0 +1,32 @@
+apiVersion: mysql.presslabs.org/v1alpha1
+kind: MysqlCluster
+metadata:
+  name: {{ include "mysql-spotguide.clustername" . }}
+  labels:
+    app.kubernetes.io/name: "mysql-{{ include "mysql-spotguide.fullname" . | sha1sum | trunc 10 }}"
+    helm.sh/chart: {{ include "mysql-spotguide.clustername" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.mysql.replicas }}
+  secretName: {{ default (printf "%s-cluster" (include "mysql-spotguide.fullname" .)) .Values.mysql.existingSecret }}
+  mysqlVersion: {{ .Values.mysql.version | quote }}
+  {{- if .Values.mysql.backup.enabled }}
+  backupSchedule: {{ .Values.mysql.backup.schedule }}
+  backupUri: "s3://{{ .Values.mysql.backup.bucket }}"
+  backupSecretName: {{ .Values.mysql.backup.secret }}
+  backupScheduleJobsHistoryLimit: {{ .Values.mysql.backup.limit }}
+  {{- end }}
+  podSpec:
+    securityContext:
+      enabled: true
+      fsGroup: 1001
+      runAsUser: 1001
+    resources:
+{{ toYaml .Values.mysql.resources | indent 8 }}
+  volumeSpec:
+{{ toYaml .Values.mysql.volumeSpec | indent 4 }}
+{{- with fromYaml .Values.mysql.conf }}
+  mysqlConf:
+{{ toYaml . | indent 4 }}
+{{- end }}

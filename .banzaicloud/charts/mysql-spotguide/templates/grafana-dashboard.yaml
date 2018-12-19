@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "mysql-spotguide.clustername" . }}
+  labels:
+    app.kubernetes.io/name: "mysql-{{ include "mysql-spotguide.fullname" . | sha1sum | trunc 10 }}"
+    helm.sh/chart: {{ include "mysql-spotguide.clustername" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    pipeline_grafana_dashboard: "1"
+data:
+  mysql-overview.json: |-2
+{{ .Files.Get "grafana-dashboards/mysql-overview.json"| indent 4 }}

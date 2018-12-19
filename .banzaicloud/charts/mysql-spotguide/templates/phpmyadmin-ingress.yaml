@@ -1,14 +1,13 @@
-{{ if and .Values.phpmyadmin.enabled }}
-{{- if .Values.phpmyadmin.ingress.enabled -}}
-{{- $serviceName := include "mysql-single.fullname" . -}}
-{{- $servicePort := .Values.phpmyadmin.service.port -}}
+{{ if .Values.phpmyadmin.enabled }}
+{{- if and .Values.phpmyadmin.ingress.enabled (gt (len .Values.phpmyadmin.ingress.hosts) 0) -}}
+{{- $serviceName := include "mysql-spotguide.fullname" . -}}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: {{ template "mysql-single.fullname" . }}-phpmyadmin
+  name: {{ template "mysql-spotguide.fullname" . }}-phpmyadmin
   labels:
-    app.kubernetes.io/name: {{ include "mysql-single.name" . }}
-    helm.sh/chart: {{ include "mysql-single.chart" . }}
+    app.kubernetes.io/name: {{ include "mysql-spotguide.name" . }}
+    helm.sh/chart: {{ include "mysql-spotguide.chart" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- with .Values.phpmyadmin.ingress.annotations }}
