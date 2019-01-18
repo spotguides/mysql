@@ -200,10 +200,9 @@ questions:
 
 - type: pipeline
   dataType: boolean
-  label: Enable (coming soon...)
+  label: Enable
   key: enable_backups
   group: Mysql Server Backups
-  disabled: true
   default: false
   order: 14
   targets:
@@ -211,11 +210,12 @@ questions:
 
 - type: bucket
   group: Mysql Server Backups
-  hidden: true
   filter:
     cloud:
       - amazon
-  description: In this version, only AWS S3 buckets are supported
+      - google
+      - azure
+  description: In this version, only Amazon S3 and Google Storage buckets are supported
   order: 15
   showIf:
     properties:
@@ -224,17 +224,16 @@ questions:
   targets:
     - name: deploy_mysql_cluster.deployment.values.mysql.backup.bucket
     - cloud: deploy_mysql_cluster.deployment.values.mysql.backup.cloud
-    - location: install_backup_secret.clusterSecret.spec[2].value
+    - location: install_backup_secret.clusterSecret.spec[0].value
     - location: deploy_mysql_cluster.deployment.values.mysql.backup.location
     - secret.name: install_backup_secret.clusterSecret.sourceSecretName
 
 - type: pipeline
   dataType: string
   group: Mysql Server Backups
-  hidden: true
-  default: 0 * * * * *
+  default: 0 0 * * * *
   label: schedule
-  placeholder: CRON expression
+  placeholder: cron expression
   pattern: ^(((([\*]{1}){1})|((\*\/){0,1}(([0-9]{1}){1}|(([1-5]{1}){1}([0-9]{1}){1}){1}))) ((([\*]{1}){1})|((\*\/){0,1}(([0-9]{1}){1}|(([1-5]{1}){1}([0-9]{1}){1}){1}))) ((([\*]{1}){1})|((\*\/){0,1}(([0-9]{1}){1}|(([1]{1}){1}([0-9]{1}){1}){1}|([2]{1}){1}([0-3]{1}){1}))) ((([\*]{1}){1})|((\*\/){0,1}(([1-9]{1}){1}|(([1-2]{1}){1}([0-9]{1}){1}){1}|([3]{1}){1}([0-1]{1}){1}))) ((([\*]{1}){1})|((\*\/){0,1}(([1-9]{1}){1}|(([1-2]{1}){1}([0-9]{1}){1}){1}|([3]{1}){1}([0-1]{1}){1}))|(jan|feb|mar|apr|may|jun|jul|aug|sep|okt|nov|dec)) ((([\*]{1}){1})|((\*\/){0,1}(([0-7]{1}){1}))|(sun|mon|tue|wed|thu|fri|sat)))$
   order: 16
   targets:

@@ -27,7 +27,7 @@ mysql:
   rootPassword:
   backup:
     enabled: false
-    schedule: "0 * * * * *" # every hour
+    schedule: "0 0 * * * *" # every hour
     limit: 8
     bucket: ""
     secret: ""

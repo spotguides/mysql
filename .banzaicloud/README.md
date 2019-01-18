@@ -13,6 +13,7 @@ helm upgrade --install mysql-operator presslabs/mysql-operator \
   --set orchestrator.antiAffinity=soft \
   --set rbac.create=true \
   --set rbac.serviceAccountName=mysql-operator \
+  --set helperImage="banzaicloud/mysql-helper:0.1.15" \
   --wait
 
 helm upgrade --install mysql-spotguide charts/mysql-spotguide \

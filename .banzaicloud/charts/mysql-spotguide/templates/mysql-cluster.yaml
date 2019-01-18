@@ -11,12 +11,18 @@ spec:
   replicas: {{ .Values.mysql.replicas }}
   secretName: {{ default (printf "%s-cluster" (include "mysql-spotguide.fullname" .)) .Values.mysql.existingSecret }}
   mysqlVersion: {{ .Values.mysql.version | quote }}
-  {{- if .Values.mysql.backup.enabled }}
+{{- if .Values.mysql.backup.enabled }}
   backupSchedule: {{ .Values.mysql.backup.schedule }}
+  {{- if eq .Values.mysql.backup.cloud "amazon" }}
   backupUri: "s3://{{ .Values.mysql.backup.bucket }}"
+  {{- else if eq .Values.mysql.backup.cloud "google" }}
+  backupUri: "gs://{{ .Values.mysql.backup.bucket }}"
+  {{- else if eq .Values.mysql.backup.cloud "azure" }}
+  backupUri: "azure://{{ .Values.mysql.backup.bucket }}"
+  {{- end }}
   backupSecretName: {{ .Values.mysql.backup.secret }}
   backupScheduleJobsHistoryLimit: {{ .Values.mysql.backup.limit }}
-  {{- end }}
+{{- end }}
   podSpec:
     securityContext:
       enabled: true
