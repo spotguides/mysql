@@ -18,5 +18,5 @@ spec:
   selector:
     app: mysql-operator
     role: master
-    mysql_cluster: {{ include "mysql-spotguide.fullname" . }}
+    mysql_cluster: {{ include "mysql-spotguide.clustername" . }}
 {{- end }}

@@ -63,12 +63,47 @@ pipeline:
       namespace: default
       merge: true
       spec:
+        - name: AWS_REGION
+          # value:
         - name: AWS_ACCESS_KEY_ID
           source: AWS_ACCESS_KEY_ID
         - name: AWS_SECRET_KEY
           source: AWS_SECRET_ACCESS_KEY
-        - name: AWS_REGION
+  {{{{- else if (and (.pipeline.deploy_mysql_cluster.deployment.values.mysql.backup.cloud) (eq .pipeline.deploy_mysql_cluster.deployment.values.mysql.backup.cloud "google")) }}}}
+  install_backup_secret:
+    when:
+      branch:
+        include: [master]
+    image: banzaicloud/ci-pipeline-client:0.10.1
+    action: InstallSecret
+    clusterSecret:
+      # sourceSecretName:
+      name: '{{ .CICD_REPO_NAME }}-backup'
+      namespace: default
+      merge: true
+      spec:
+        - name: GCS_LOCATION
           # value:
+        - name: GCS_SERVICE_ACCOUNT_JSON_KEY
+  {{{{- else if (and (.pipeline.deploy_mysql_cluster.deployment.values.mysql.backup.cloud) (eq .pipeline.deploy_mysql_cluster.deployment.values.mysql.backup.cloud "azure")) }}}}
+  install_backup_secret:
+    when:
+      branch:
+        include: [master]
+    image: banzaicloud/ci-pipeline-client:0.10.1
+    action: InstallSecret
+    clusterSecret:
+      # sourceSecretName:
+      name: '{{ .CICD_REPO_NAME }}-backup'
+      namespace: default
+      merge: true
+      spec:
+        - name: AZUREBLOB_LOCATION
+          # value:
+        - name: AZUREBLOB_KEY
+          source: accessKey
+        - name: AZUREBLOB_ACCOUNT
+          source: storageAccount
   {{{{- end }}}}
 {{{{- end }}}}
 
@@ -101,6 +136,7 @@ pipeline:
       reuseValues: true
       namespace: pipeline-system
       values:
+        helperImage: 'banzaicloud/mysql-helper:0.1.15'
         replicaCount: 1
         rbac:
           create: true
