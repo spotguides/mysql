@@ -107,6 +107,7 @@ pipeline:
   {{{{- end }}}}
 {{{{- end }}}}
 
+{{{{- if .pipeline.deploy_mysql_cluster.deployment.values.phpmyadmin.enabled }}}}
   install_phpmyadmin_control_secret:
     when:
       branch:
@@ -123,6 +124,7 @@ pipeline:
         source: username
       - name: password
         source: password
+{{{{- end }}}}
 
   deploy_mysql_operator:
     when:
