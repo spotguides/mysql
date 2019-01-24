@@ -215,7 +215,7 @@ questions:
       - amazon
       - google
       - azure
-  description: In this version, only Amazon S3 and Google Storage buckets are supported
+  description: In this version, only Amazon S3, Google Storage and Azure Blob Storage are supported
   order: 15
   showIf:
     properties:
