@@ -88,13 +88,34 @@ questions:
   order: 5
 
 - type: pipeline
+  dataType: string
+  label: StorageClass
+  key: mysql_storageclass
+  placeholder: 'Default StorageClass will be used if empty'
+  group: Mysql Server
+  order: 6
+  targets:
+  - deploy_mysql_cluster.deployment.values.mysql.volumeSpec.storageClassName
+
+- type: pipeline
+  dataType: string
+  label: Storage Size
+  key: mysql_storage_size
+  group: Mysql Server
+  default: 10Gi
+  pattern: ^\d+(E|P|T|G|M|K|Ei|Pi|Ti|Gi|Mi|Ki)?$
+  order: 7
+  targets:
+  - deploy_mysql_cluster.deployment.values.mysql.volumeSpec.resources.requests.storage
+
+- type: pipeline
   dataType: boolean
   label: TLS (coming soon...)
   key: tls_endpoint
   group: Mysql Server
   disabled: true
   default: false
-  order: 6
+  order: 8
 
 - type: pipeline
   key: mysql_configuration
@@ -102,7 +123,7 @@ questions:
   dataType: boolean
   label: Customize configuration
   default: false
-  order: 7
+  order: 9
 
 - type: pipeline
   dataType: string
@@ -112,7 +133,7 @@ questions:
   default: |
     # innodb_buffer_pool_size: 128M
   required: true
-  order: 8
+  order: 10
   targets:
   - deploy_mysql_cluster.deployment.values.mysql.conf
   # Using https://codemirror.net/doc/manual.html#config
@@ -132,7 +153,7 @@ questions:
   dataType: boolean
   label: Customize resources
   default: false
-  order: 9
+  order: 11
 
 - type: pipeline
   dataType: string
@@ -148,7 +169,7 @@ questions:
     properties:
       mysql_resources:
         const: true
-  order: 10
+  order: 12
 
 - type: pipeline
   dataType: string
@@ -158,7 +179,7 @@ questions:
   pattern: ^\d+(E|P|T|G|M|K|Ei|Pi|Ti|Gi|Mi|Ki)?$
   description: Maximum amount of memory the MysqlServer container can use
   required: true
-  order: 11
+  order: 13
   targets:
   - deploy_mysql_cluster.deployment.values.mysql.resources.limits.memory
   showIf:
@@ -174,7 +195,7 @@ questions:
   pattern: ^\d+(\.?\d+|m)?$
   description: Minimum amount of CPU the MysqlServer container needs
   required: true
-  order: 12
+  order: 14
   targets:
   - deploy_mysql_cluster.deployment.values.mysql.resources.requests.cpu
   showIf:
@@ -190,7 +211,7 @@ questions:
   pattern: ^\d+(\.?\d+|m)?$
   description: Maximum amount of CPU the MysqlServer container can use
   required: true
-  order: 13
+  order: 15
   targets:
   - deploy_mysql_cluster.deployment.values.mysql.resources.limits.cpu
   showIf:
@@ -204,7 +225,7 @@ questions:
   key: enable_backups
   group: Mysql Server Backups
   default: false
-  order: 14
+  order: 16
   targets:
     - deploy_mysql_cluster.deployment.values.mysql.backup.enabled
 
@@ -216,7 +237,7 @@ questions:
       - google
       - azure
   description: In this version, only Amazon S3, Google Storage and Azure Blob Storage are supported
-  order: 15
+  order: 17
   showIf:
     properties:
       enable_backups:
@@ -235,7 +256,7 @@ questions:
   label: schedule
   placeholder: cron expression
   pattern: ^(((([\*]{1}){1})|((\*\/){0,1}(([0-9]{1}){1}|(([1-5]{1}){1}([0-9]{1}){1}){1}))) ((([\*]{1}){1})|((\*\/){0,1}(([0-9]{1}){1}|(([1-5]{1}){1}([0-9]{1}){1}){1}))) ((([\*]{1}){1})|((\*\/){0,1}(([0-9]{1}){1}|(([1]{1}){1}([0-9]{1}){1}){1}|([2]{1}){1}([0-3]{1}){1}))) ((([\*]{1}){1})|((\*\/){0,1}(([1-9]{1}){1}|(([1-2]{1}){1}([0-9]{1}){1}){1}|([3]{1}){1}([0-1]{1}){1}))) ((([\*]{1}){1})|((\*\/){0,1}(([1-9]{1}){1}|(([1-2]{1}){1}([0-9]{1}){1}){1}|([3]{1}){1}([0-1]{1}){1}))|(jan|feb|mar|apr|may|jun|jul|aug|sep|okt|nov|dec)) ((([\*]{1}){1})|((\*\/){0,1}(([0-7]{1}){1}))|(sun|mon|tue|wed|thu|fri|sat)))$
-  order: 16
+  order: 18
   targets:
     - deploy_mysql_cluster.deployment.values.mysql.backup.schedule
   showIf:
@@ -251,7 +272,7 @@ questions:
   group: phpMyAdmin
   targets:
     - deploy_mysql_cluster.deployment.values.phpmyadmin.enabled
-  order: 18
+  order: 19
 
 - type: pipeline
   dataType: enum
@@ -269,7 +290,7 @@ questions:
         const: true
   targets:
     - deploy_mysql_cluster.deployment.values.phpmyadmin.image.tag
-  order: 19
+  order: 20
 
 - type: secret
   dataType: password
@@ -288,4 +309,4 @@ questions:
     properties:
       set_phpmyadmin_enable:
         const: true
-  order: 20
+  order: 21
