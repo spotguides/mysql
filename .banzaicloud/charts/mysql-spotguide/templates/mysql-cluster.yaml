@@ -31,7 +31,13 @@ spec:
     resources:
 {{ toYaml .Values.mysql.resources | indent 8 }}
   volumeSpec:
-{{ toYaml .Values.mysql.volumeSpec | indent 4 }}
+    accessModes: {{ .Values.mysql.volumeSpec.accessModes}}
+{{- if .Values.mysql.volumeSpec.storageClassName }}
+    storageClassName: "{{ .Values.mysql.volumeSpec.storageClassName }}"
+{{- end }}
+    resources:
+      requests:
+        storage: {{ .Values.mysql.volumeSpec.resources.requests.storage}}
 {{- with fromYaml .Values.mysql.conf }}
   mysqlConf:
 {{ toYaml . | indent 4 }}
