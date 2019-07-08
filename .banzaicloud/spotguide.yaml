@@ -15,12 +15,12 @@ questions:
 - type: pipeline
   dataType: enum
   label: 'Version'
-  default: '5.7-stretch'
+  default: '5.7'
   required: true
   group: Mysql Server
   options:
-  - value: '5.7-stretch'
-    label: '5.7'
+  - value: '5.7'
+    label: 'Percona 5.7'
   targets:
   - deploy_mysql_cluster.deployment.values.mysql.version
   order: 1
