@@ -12,7 +12,7 @@ pipeline:
     - helm init -c
     - helm package ./.banzaicloud/charts/mysql-spotguide
     - helm repo add presslabs https://presslabs.github.io/charts
-    - helm fetch presslabs/mysql-operator --version 0.1.14
+    - helm fetch presslabs/mysql-operator --version 0.2.9
 
   install_mysql_root_secret:
     when:
@@ -133,7 +133,7 @@ pipeline:
     image: banzaicloud/ci-pipeline-client:0.11
     action: EnsureDeployment
     deployment:
-      name: './mysql-operator-0.1.14.tgz'
+      name: './mysql-operator-0.2.9.tgz'
       releaseName: mysql-operator
       reuseValues: true
       namespace: pipeline-system
@@ -171,4 +171,4 @@ pipeline:
               traefik.ingress.kubernetes.io/redirect-replacement: https://$1
               traefik.ingress.kubernetes.io/redirect-permanent: "true"
             hosts:
-            - 'admin-{{.CICD_REPO_NAME}}.{{.CLUSTER_NAME}}.{{.ORG_NAME}}.{{.DOMAIN_NAME}}'
+            - '{{ lower (printf "admin-%s-%s.%s.%s" .CICD_REPO_NAME (.CLUSTER_NAME | sha1sum | trunc 10) .ORG_NAME .DOMAIN_NAME) }}'
