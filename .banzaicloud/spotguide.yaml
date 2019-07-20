@@ -278,12 +278,12 @@ questions:
   dataType: enum
   label: 'Version'
   description: ''
-  default: '4.7'
+  default: '4.9'
   required: true
   group: phpMyAdmin
   options:
-  - '4.7'
   - '4.8'
+  - '4.9'
   showIf:
     properties:
       set_phpmyadmin_enable:
